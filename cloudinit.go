@@ -18,3 +18,11 @@ type CloudFile struct {
 	Append      bool   `yaml:"append"`
 	Permissions string `yaml:"permissions"`
 }
+
+// handle default value for permissions if not provided in the cloud-config file
+func (f CloudFile) GetPermissions() string {
+	if f.Permissions == "" {
+		return "0644"
+	}
+	return f.Permissions
+}

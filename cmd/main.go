@@ -46,7 +46,11 @@ func main() {
 
 	fmt.Println(string(output))
 
-	butane := ""
+	butane, err := cloud2butane.TranslateCloudConfig(cloudConfig)
+	if err != nil {
+		fmt.Printf("Error translating cloud-config to butane: %v\n", err)
+		return
+	}
 
 	// print the butane struct as a json object
 	butaneOutput, err := json.MarshalIndent(butane, "", "  ")
