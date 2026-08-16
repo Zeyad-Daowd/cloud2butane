@@ -36,7 +36,7 @@ func TranslateCloudConfig(config CloudConfig) (Butane, error) {
 				Inline: file.Content,
 			},
 			//parse int from string to int
-			Mode: int(mode),
+			Mode: Octal(mode),
 		}
 
 		ButaneStorage.Files = append(ButaneStorage.Files, butaneFile)

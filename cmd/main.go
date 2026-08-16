@@ -52,10 +52,10 @@ func main() {
 		return
 	}
 
-	// print the butane struct as a json object
-	butaneOutput, err := json.MarshalIndent(butane, "", "  ")
+	// print the butane struct as yaml
+	butaneOutput, err := yaml.Marshal(butane)
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Printf("Error marshaling Butane config: %v\n", err)
 		return
 	}
 
