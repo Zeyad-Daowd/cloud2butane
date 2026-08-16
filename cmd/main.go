@@ -17,11 +17,15 @@ type Test struct {
 func main() {
 	// read the cloud-config file from arguments
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: go run main.go <cloud-config-file>")
+		fmt.Println("Usage: go run main.go <cloud-config-file> --debug(optional)")
 		return
 	}
 	cloudConfigFile := os.Args[1]
 
+	debug := false
+	if len(os.Args) > 2 && os.Args[2] == "--debug" {
+		debug = true
+	}
 	// read the cloud-config file
 	data, err := ioutil.ReadFile(cloudConfigFile)
 	if err != nil {
@@ -37,14 +41,18 @@ func main() {
 		return
 	}
 
-	// print the parsed cloud-config as a json object
-	output, err := json.MarshalIndent(cloudConfig, "", "  ")
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
+	if debug {
+		// print the parsed cloud-config as a json object
+		output, err := json.MarshalIndent(cloudConfig, "", "  ")
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+		fmt.Println("========DEBUG MODE========")
+		fmt.Println("Parsed cloud-config:")
+		fmt.Println(string(output))
+		fmt.Println("==========================")
 	}
-
-	fmt.Println(string(output))
 
 	butane, err := cloud2butane.TranslateCloudConfig(cloudConfig)
 	if err != nil {
