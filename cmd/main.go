@@ -1,0 +1,60 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"os"
+
+	cloud2butane "github.com/Zeyad-Daowd/cloud2butane"
+	"gopkg.in/yaml.v3"
+)
+
+type Test struct {
+	Mode int `yaml:"mode"`
+}
+
+func main() {
+	// read the cloud-config file from arguments
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: go run main.go <cloud-config-file>")
+		return
+	}
+	cloudConfigFile := os.Args[1]
+
+	// read the cloud-config file
+	data, err := ioutil.ReadFile(cloudConfigFile)
+	if err != nil {
+		fmt.Printf("Error reading cloud-config file: %v\n", err)
+		return
+	}
+
+	// parse the cloud-config file
+	var cloudConfig cloud2butane.CloudConfig
+	err = yaml.Unmarshal(data, &cloudConfig)
+	if err != nil {
+		fmt.Printf("Error parsing cloud-config file: %v\n", err)
+		return
+	}
+
+	// print the parsed cloud-config as a json object
+	output, err := json.MarshalIndent(cloudConfig, "", "  ")
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println(string(output))
+
+	butane := ""
+
+	// print the butane struct as a json object
+	butaneOutput, err := json.MarshalIndent(butane, "", "  ")
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println(string(butaneOutput))
+
+}

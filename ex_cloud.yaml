@@ -1,0 +1,24 @@
+#cloud-config
+
+users:
+  - name: alice
+    groups:
+      - docker
+      - developers
+    shell: /bin/bash
+
+write_files:
+  - path: /etc/example.conf
+    content: |
+      hello
+      world
+    permissions: "0644"
+
+  - path: /etc/crontab
+    content: |
+      15 * * * * root ship_logs
+    append: true
+
+runcmd:
+  - systemctl enable example.service
+  - systemctl start example.service
