@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	cloud2butane "github.com/Zeyad-Daowd/cloud2butane"
@@ -27,7 +26,7 @@ func main() {
 		debug = true
 	}
 	// read the cloud-config file
-	data, err := ioutil.ReadFile(cloudConfigFile)
+	data, err := os.ReadFile(cloudConfigFile)
 	if err != nil {
 		fmt.Printf("Error reading cloud-config file: %v\n", err)
 		return

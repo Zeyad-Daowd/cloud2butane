@@ -48,18 +48,15 @@ func addButaneFile(ButaneStorage *ButaneStorage, file CloudFile) error {
 	return nil
 }
 
-func addButaneUnit(ButaneSystemd *ButaneSystemd, file CloudFile, runcmd []string) error {
-	// extract file name from path by splitting / and getting last element
-	fileName := filepath.Base(file.Path)
-	// check if the file name is in the runcmd list
+func checkUnitEnabled(fileName string, runcmd []string) bool {
 	enableUnit := false
 	for _, cmd := range runcmd {
 		// handle systemctl enable <unit> command
 		parts := strings.Fields(cmd)
 		// use parts to handle double spaces in command
-		if len(parts) == 3 &&
+		if len(parts) >= 3 &&
 			parts[0] == "systemctl" &&
-			parts[2] == fileName {
+			parts[len(parts)-1] == fileName {
 			if parts[1] == "enable" {
 				enableUnit = true
 			} else if parts[1] == "disable" {
@@ -67,6 +64,14 @@ func addButaneUnit(ButaneSystemd *ButaneSystemd, file CloudFile, runcmd []string
 			}
 		}
 	}
+	return enableUnit
+}
+
+func addButaneUnit(ButaneSystemd *ButaneSystemd, file CloudFile, runcmd []string) error {
+	// extract file name from path by splitting / and getting last element
+	fileName := filepath.Base(file.Path)
+	// check if the file name is in the runcmd list
+	enableUnit := checkUnitEnabled(fileName, runcmd)
 	butaneUnit := ButaneUnit{
 		Name:     fileName,
 		Enabled:  enableUnit,
@@ -150,9 +155,12 @@ func TranslateCloudConfig(config CloudConfig) (Butane, error) {
 			}
 		}
 		if !foundService {
+			// create stub unit
+			enableUnit := checkUnitEnabled(service, config.Runcmd)
 			unit := ButaneUnit{
 				Name:    service,
 				Dropins: []ButaneDropin{},
+				Enabled: enableUnit,
 			}
 			unit.Dropins = append(unit.Dropins, dropin)
 			butaneSystemd.Units = append(butaneSystemd.Units, unit)
