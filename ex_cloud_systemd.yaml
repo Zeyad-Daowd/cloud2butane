@@ -1,0 +1,22 @@
+users:
+  - name: alice
+    groups:
+      - wheel
+    shell: /bin/bash
+
+write_files:
+  - path: /etc/example.conf
+    content: |
+      hello
+    permissions: "0644"
+
+  - path: /etc/systemd/system/example.service
+    content: |
+      [Unit]
+      Description=Example
+
+      [Service]
+      ExecStart=/usr/bin/example
+
+runcmd:
+  - systemctl enable example.service

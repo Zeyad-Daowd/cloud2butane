@@ -11,6 +11,17 @@ type Butane struct {
 	Version string        `yaml:"version"`
 	Passwd  ButanePasswd  `yaml:"passwd"`
 	Storage ButaneStorage `yaml:"storage"`
+	Systemd ButaneSystemd `yaml:"systemd"`
+}
+
+type ButaneSystemd struct {
+	Units []ButaneUnit `yaml:"units"`
+}
+
+type ButaneUnit struct {
+	Name     string `yaml:"name"`
+	Enabled  bool   `yaml:"enabled"`
+	Contents string `yaml:"contents"`
 }
 
 type ButanePasswd struct {
