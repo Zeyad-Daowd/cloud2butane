@@ -19,8 +19,14 @@ type ButaneSystemd struct {
 }
 
 type ButaneUnit struct {
+	Name     string         `yaml:"name"`
+	Enabled  bool           `yaml:"enabled,omitempty"`
+	Contents string         `yaml:"contents,omitempty"`
+	Dropins  []ButaneDropin `yaml:"dropins,omitempty"`
+}
+
+type ButaneDropin struct {
 	Name     string `yaml:"name"`
-	Enabled  bool   `yaml:"enabled"`
 	Contents string `yaml:"contents"`
 }
 

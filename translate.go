@@ -9,9 +9,7 @@ import (
 
 func isValidSystemdDirectory(path string) bool {
 	const systemdDir = "/etc/systemd/system"
-	// to handle cases like /etc/systemd/../systemd/system
-	cleanPath := filepath.Clean(path)
-	return filepath.Dir(cleanPath) == systemdDir
+	return filepath.Dir(path) == systemdDir
 }
 
 func isValidSystemdUnit(path string) bool {
@@ -79,6 +77,23 @@ func addButaneUnit(ButaneSystemd *ButaneSystemd, file CloudFile, runcmd []string
 	return nil
 }
 
+func isValidDropin(file CloudFile) bool {
+	if filepath.Ext(file.Path) != ".conf" {
+		return false
+	}
+	directory := filepath.Dir(file.Path)
+	if !strings.HasSuffix(directory, ".d") {
+		return false
+	}
+	trimmed := strings.TrimSuffix(directory, ".d")
+	return isValidSystemdUnit(trimmed)
+}
+
+func getDropinService(path string) string {
+	directory := filepath.Dir(path)
+	trimmed := strings.TrimSuffix(directory, ".d")
+	return filepath.Base(trimmed)
+}
 func TranslateCloudConfig(config CloudConfig) (Butane, error) {
 	var butane Butane
 	butane.Variant = "fcos"
@@ -94,28 +109,58 @@ func TranslateCloudConfig(config CloudConfig) (Butane, error) {
 		}
 		ButanePasswd.Users = append(ButanePasswd.Users, butaneUser)
 	}
-	ButaneStorage := ButaneStorage{
+	butaneStorage := ButaneStorage{
 		Files: []ButaneFile{},
 	}
-	ButaneSystemd := ButaneSystemd{
+	butaneSystemd := ButaneSystemd{
 		Units: []ButaneUnit{},
 	}
+	dropinFiles := []CloudFile{}
 	for _, file := range config.WriteFiles {
+		file.Path = filepath.Clean(file.Path)
 		if isValidSystemdUnit(file.Path) {
-			err := addButaneUnit(&ButaneSystemd, file, config.Runcmd)
+			err := addButaneUnit(&butaneSystemd, file, config.Runcmd)
 			if err != nil {
 				return Butane{}, err
 			}
+		} else if isValidDropin(file) {
+			dropinFiles = append(dropinFiles, file)
 		} else {
-			err := addButaneFile(&ButaneStorage, file)
+			err := addButaneFile(&butaneStorage, file)
 			if err != nil {
 				return Butane{}, err
 			}
 		}
 
 	}
+
+	for _, dropinFile := range dropinFiles {
+		service := getDropinService(dropinFile.Path)
+		foundService := false
+		dropin := ButaneDropin{
+			Name:     filepath.Base(dropinFile.Path),
+			Contents: dropinFile.Content,
+		}
+		for i := range butaneSystemd.Units {
+			butaneUnit := &butaneSystemd.Units[i]
+			if service == butaneUnit.Name {
+				foundService = true
+				butaneUnit.Dropins = append(butaneUnit.Dropins, dropin)
+				break
+			}
+		}
+		if !foundService {
+			unit := ButaneUnit{
+				Name:    service,
+				Dropins: []ButaneDropin{},
+			}
+			unit.Dropins = append(unit.Dropins, dropin)
+			butaneSystemd.Units = append(butaneSystemd.Units, unit)
+		}
+	}
+
 	butane.Passwd = ButanePasswd
-	butane.Storage = ButaneStorage
-	butane.Systemd = ButaneSystemd
+	butane.Storage = butaneStorage
+	butane.Systemd = butaneSystemd
 	return butane, nil
 }

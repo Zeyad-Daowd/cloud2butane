@@ -1,0 +1,68 @@
+#cloud-config
+
+users:
+  - name: alice
+    groups:
+      - docker
+      - developers
+    shell: /bin/bash
+
+  - name: bob
+    groups:
+      - wheel
+    shell: /bin/sh
+
+write_files:
+  # Normal file with explicit permissions
+  - path: /etc/example.conf
+    content: |
+      hello
+      world
+    permissions: "0600"
+
+  # Normal file using the default permissions
+  - path: /etc/default-example.conf
+    content: |
+      default permissions
+
+  # Systemd service
+  - path: /etc/systemd/system/example.service
+    content: |
+      [Unit]
+      Description=Example service
+
+      [Service]
+      ExecStart=/usr/bin/example
+      Restart=always
+
+  # Systemd drop-in
+  - path: /etc/systemd/system/example.service.d/override.conf
+    content: |
+      [Service]
+      Environment=EXAMPLE=true
+
+  # Another systemd unit, with .. in the path to test filepath.Clean
+  - path: /etc/systemd/../systemd/system/example.timer
+    content: |
+      [Unit]
+      Description=Example timer
+
+      [Timer]
+      OnBootSec=5min
+
+  # A drop-in for a unit that isn't explicitly defined above
+  - path: /etc/systemd/system/another.service.d/override.conf
+    content: |
+      [Service]
+      Restart=on-failure
+
+  # Normal file that should NOT be considered a systemd unit
+  - path: /etc/example.service
+    content: |
+      This is just a normal file.
+
+runcmd:
+  - systemctl enable example.service
+  - systemctl start example.service
+  - systemctl enable example.timer
+  - systemctl disable another.service
