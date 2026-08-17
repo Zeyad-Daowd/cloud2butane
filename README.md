@@ -70,7 +70,7 @@ rather than full coverage. Not yet handled:
 - Only `runcmd` lines matching `systemctl enable|disable <unit>` are
   understood. Ignition itself has no way to run arbitrary commands at
   provisioning time, so a generic `runcmd` can't be translated directly.
-  It's possible to approximate `runcmd` by having Butane declare a
+  It might be reasonable to investigate approximating `runcmd` by having Butane declare a
   synthesized systemd oneshot unit (`Type=oneshot`, `ExecStart=<command>`,
   `ConditionFirstBoot=true`) that runs the command at first boot instead —
   this shifts execution from Ignition's provisioning stage to systemd
