@@ -103,6 +103,27 @@ func TestAddButaneUnit(t *testing.T) {
 			runcmd: []string{},
 			want:   false,
 		},
+		{
+			name:   "disable unit",
+			runcmd: []string{"systemctl disable example.service"},
+			want:   false,
+		},
+		{
+			name: "enable then disable",
+			runcmd: []string{
+				"systemctl enable example.service",
+				"systemctl disable example.service",
+			},
+			want: false,
+		},
+		{
+			name: "disable then enable",
+			runcmd: []string{
+				"systemctl disable example.service",
+				"systemctl enable example.service",
+			},
+			want: true,
+		},
 	}
 
 	for _, tt := range tests {

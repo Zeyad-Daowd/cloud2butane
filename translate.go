@@ -61,9 +61,12 @@ func addButaneUnit(ButaneSystemd *ButaneSystemd, file CloudFile, runcmd []string
 		// use parts to handle double spaces in command
 		if len(parts) == 3 &&
 			parts[0] == "systemctl" &&
-			parts[1] == "enable" &&
 			parts[2] == fileName {
-			enableUnit = true
+			if parts[1] == "enable" {
+				enableUnit = true
+			} else if parts[1] == "disable" {
+				enableUnit = false
+			}
 		}
 	}
 	butaneUnit := ButaneUnit{
