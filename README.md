@@ -11,7 +11,7 @@ because cloud-init is imperative and Butane/Ignition is purely declarative.
 
 ## What it does
 
-Given a cloud-config file, it produces an equivalent Butane config by:
+Given a cloud-config file, it produces a Butane config representing the supported subset of the input by:
 
 - Translating `users` (name, groups, shell) into Butane `passwd.users`.
 - Translating `write_files` entries into Butane `storage.files`, including
@@ -26,13 +26,44 @@ Given a cloud-config file, it produces an equivalent Butane config by:
   on the corresponding systemd unit — since Butane/Ignition has no
   equivalent to `runcmd` and can't run arbitrary commands at
   provisioning time. If no matching `runcmd` is found, the unit is
-  written but left disabled, matching what the original cloud-config
-  would have actually done.
+  written but left without being enabled.
 - Detecting `write_files` entries that target a systemd drop-in path
   (`<unit>.d/<name>.conf`) and translating them into a `dropins` entry
   under the corresponding Butane systemd unit, creating a stub unit if
   the base unit wasn't otherwise defined.
 
+## Example
+
+Cloud-init:
+
+```yaml
+write_files:
+  - path: /etc/systemd/system/example.service
+    content: |
+      [Unit]
+      Description=Example service
+
+      [Service]
+      ExecStart=/usr/bin/example
+
+runcmd:
+  - systemctl enable example.service
+```
+
+**Result (current prototype output):**
+
+```yaml
+systemd:
+  units:
+    - name: example.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Example service
+
+        [Service]
+        ExecStart=/usr/bin/example
+```
 ## Usage
 
 ```sh
@@ -51,10 +82,12 @@ go run ./cmd ex_cloud_systemd.yaml
 See `ex_cloud.yaml`, `ex_cloud_systemd.yaml`, and `ex_cloud_dropin.yaml` for
 sample inputs covering plain files, systemd unit fusion, and drop-ins.
 
-## Known limitations / not yet implemented
+## Scope / Known Limitations
 
-This is a prototype, scoped to demonstrate the trickiest translation cases
-rather than full coverage. Not yet handled:
+This prototype intentionally implements only a subset of cloud-init
+needed to explore the core translation problems.
+
+Not yet implemented:
 
 - **Groups** — cloud-init's top-level `groups` module (creating new groups)
   and Butane's `passwd.groups` aren't parsed. User-to-group *membership* is
@@ -67,17 +100,12 @@ rather than full coverage. Not yet handled:
 - **`systemctl enable --now <unit>`** and other multi-flag `systemctl`
   invocations aren't recognized by the enable/disable detection, which
   currently expects a plain `systemctl enable|disable <unit>`.
-- Only `runcmd` lines matching `systemctl enable|disable <unit>` are
-  understood. Ignition itself has no way to run arbitrary commands at
-  provisioning time, so a generic `runcmd` can't be translated directly.
-  It's possible to approximate `runcmd` by having Butane declare a
-  synthesized systemd oneshot unit (`Type=oneshot`, `ExecStart=<command>`,
-  `ConditionFirstBoot=true`) that runs the command at first boot instead —
-  this shifts execution from Ignition's provisioning stage to systemd
-  itself, after Ignition has finished. That's a reasonable direction for a
-  future iteration, but raises design questions (how to name synthesized
-  units, whether to merge multiple unmatched `runcmd` lines into one unit
-  or one each) that are out of scope for this prototype.
+- **Arbitrary `runcmd` commands** — only `systemctl enable|disable <unit>`
+  is currently translated. Ignition has no direct equivalent to cloud-init's
+  provisioning-time command execution. A future implementation could
+  synthesize systemd oneshot units to execute unmatched commands at first
+  boot, but this introduces questions around unit naming and command
+  grouping.
 
 ## Tests
 
