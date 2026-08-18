@@ -104,7 +104,7 @@ Not yet implemented:
   is currently translated. Ignition has no direct equivalent to cloud-init's
   provisioning-time command execution. A future implementation could
   synthesize systemd oneshot units to execute unmatched commands at first
-  boot, but this introduces questions around unit naming and command
+  boot, but this introduces questions around correctness, unit naming, and command
   grouping.
 
 ## Tests
